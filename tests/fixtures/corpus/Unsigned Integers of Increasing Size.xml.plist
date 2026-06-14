@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><array><integer>255</integer><integer>4095</integer><integer>65535</integer><integer>1048575</integer><integer>16777215</integer><integer>268435455</integer><integer>4294967295</integer><integer>9223372036854775807</integer><integer>16045690985305262846</integer></array></plist>

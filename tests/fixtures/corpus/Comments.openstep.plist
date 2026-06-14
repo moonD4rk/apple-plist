@@ -1,0 +1,7 @@
+{
+				A=1 /* A is 1 because it is the first letter */;
+				B=2; // B is 2 because comment-to-end-of-line.
+				C=3;
+				S = /not/a/comment/;
+				S2 = /not*a/*comm*en/t;
+			}

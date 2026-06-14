@@ -1,0 +1,32 @@
+# Whitelist mode. The user's global ~/.gitignore_global ignores everything
+# (`*`) except directory traversal (`!*/`). This file re-allows the specific
+# patterns and paths we want tracked. Anything not on this list is silently
+# ignored — adding a new file type to the repo means updating this file.
+
+# --- File types allowed anywhere in the tree
+!*.rs
+!*.toml
+!*.md
+!*.yml
+!*.yaml
+!*.lock
+# Test fixtures (XML or binary property lists). Checked in under tests/.
+!*.plist
+
+# --- Root files without a recognized extension (root-only via leading `/`)
+!/.editorconfig
+!/.gitignore
+!/LICENSE
+!/NOTICE
+
+# --- Per-developer local notes (override the `!*.md` allow above)
+/CLAUDE.local.md
+AGENTS.md
+.agents/**
+
+# --- Build artifacts (override the extension allows above)
+target/
+
+# internal rfc docs
+rfcs/**
+rfc2rust/**
