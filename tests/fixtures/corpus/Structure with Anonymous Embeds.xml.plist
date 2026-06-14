@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>EmbedB</key><dict><key>FieldA</key><string>A.B.C.A1</string><key>FieldA2</key><string>A.B.C.A2</string><key>FieldB</key><string>A.B.B</string><key>FieldC</key><string>A.B.C.C</string></dict><key>FieldA</key><string>A.A</string><key>FieldA2</key><string/><key>FieldB</key><string>A.C.B</string><key>FieldC</key><string>A.C.C</string></dict></plist>

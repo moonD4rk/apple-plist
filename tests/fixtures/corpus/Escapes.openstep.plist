@@ -1,0 +1,14 @@
+{
+				W="\w";
+				A="\a";
+				B="\b";
+				V="\v";
+				F="\f";
+				T="\t";
+				R="\r";
+				N="\n";
+				Hex1="\xAB";
+				Unicode1="\u00AC";
+				Unicode2="\U00AD";
+				Octal1="\033";
+			}

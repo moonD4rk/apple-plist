@@ -1,0 +1,138 @@
+[package]
+name = "apple-plist"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+description = "Apple property-list serialization: XML, binary, OpenStep, and GNUStep."
+keywords = ["plist", "serde", "apple", "bplist", "openstep"]
+categories = ["encoding", "parser-implementations"]
+authors = ["moonD4rk"]
+repository = "https://github.com/moonD4rk/apple-plist"
+homepage = "https://github.com/moonD4rk/apple-plist"
+documentation = "https://docs.rs/apple-plist"
+readme = "README.md"
+# Cargo packaging does not honor the repo's whitelist .gitignore; exclude
+# internal design docs and local notes so they never ship to crates.io.
+exclude = [
+  "/rfc2rust",
+  "/rfcs",
+  "/AGENTS.md",
+  "/CLAUDE.md",
+  "/CLAUDE.local.md",
+  "/.github",
+  "/.editorconfig",
+  "/clippy.toml",
+  "/deny.toml",
+  "/rustfmt.toml",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lib]
+
+# Feature flags follow RFC 0002 §8 / RFC 0007 §2. `openstep` covers both text
+# dialects (OpenStep and GNUStep share the lexer); `base64` backs both the XML
+# <data> element and the GNUStep <[...]> form.
+[features]
+default = ["serde", "xml", "binary", "openstep"]
+serde = ["dep:serde"]
+xml = ["dep:quick-xml", "dep:base64"]
+binary = ["dep:crc32fast"]
+openstep = ["dep:base64"]
+
+# Dependency policy (RFC 0007 §2): every dependency earns its place with a
+# written justification. thiserror: ergonomic error enums. time: time-point
+# storage and arithmetic (the three wire date encodings are hand-rolled in
+# date.rs). serde: the (de)serialization layer. quick-xml: an XML pull
+# tokenizer. crc32fast: CRC32 keying for binary object dedup. base64: the XML
+# <data> element and the GNUStep <[...]> form. indexmap: order-preserving
+# dictionaries — Apple property lists keep dictionary key insertion order, a
+# deliberate divergence with no external analogue. Big-endian integer packing
+# uses std {from,to}_be_bytes, not a crate.
+[dependencies]
+base64 = { version = "0.22", optional = true }
+crc32fast = { version = "1", optional = true }
+indexmap = "2"
+quick-xml = { version = "0.39", optional = true }
+serde = { version = "1", optional = true }
+thiserror = "2"
+time = { version = "0.3", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+proptest = "1"
+serde = { version = "1", features = ["derive"] }
+time = { version = "0.3", features = ["macros"] }
+
+# RFC 0005 §5: count-wrap arithmetic must trap in tests, not silently wrap.
+[profile.test]
+overflow-checks = true
+
+# Release profile pinned for reproducibility (same values as Cargo default).
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+# Single source of lint truth (RFC 0007 §5). Moves to `[workspace.lints]` when
+# the fuzz crate is added
+# (M6). Strict baseline: `clippy::all` denied, `pedantic`/`nursery`/`cargo`
+# warned, CI treats warnings as errors. Test code carries `#![expect(...)]`
+# overrides at the file top.
+[lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+missing_docs = "deny"
+missing_debug_implementations = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+nonstandard_style = { level = "deny", priority = -1 }
+future_incompatible = { level = "deny", priority = -1 }
+let_underscore = { level = "warn", priority = -1 }
+unreachable_pub = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unused_qualifications = "warn"
+unused_lifetimes = "warn"
+unused_extern_crates = "warn"
+unused_import_braces = "warn"
+elided_lifetimes_in_paths = "warn"
+single_use_lifetimes = "warn"
+unused_results = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# Elevations above clippy::all
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+unreachable = "deny"
+mem_forget = "deny"
+get_unwrap = "deny"
+exit = "warn"
+indexing_slicing = "warn"
+
+# Attribute hygiene: prefer `#[expect]` over `#[allow]` so stale suppressions
+# self-report, and require a reason on every suppression.
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+# Catch accidental use of std APIs newer than the declared `rust-version`.
+incompatible_msrv = "deny"
+
+# Pedantic / cargo lints that are too noisy in practice. Documented allows
+# rather than silent skips so future contributors see them.
+module_name_repetitions = "allow"    # nested types like value::Value are fine
+multiple_crate_versions = "allow"    # transitive deps frequently disagree
+doc_markdown = "allow"               # false positives on acronyms (plist, bplist, OpenStep, GNUStep, CF$UID)
+trivially_copy_pass_by_ref = "allow" # serde skip_serializing_if requires &T
+redundant_pub_crate = "allow"        # crate-wide visibility needed across codec modules

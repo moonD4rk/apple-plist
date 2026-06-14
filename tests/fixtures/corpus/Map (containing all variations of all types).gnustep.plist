@@ -1,0 +1,1 @@
+{booleans=(<*BY>,<*BN>,);data=<01020304>;date=<*D2013-11-27 00:34:00 +0000>;floats=(<*R32>,<*R64>,);intarray=(<*I1>,<*I8>,<*I16>,<*I32>,<*I64>,<*I2>,<*I9>,<*I17>,<*I33>,<*I65>,);strings=("Hello, ASCII","Hello, \U4e16\U754c",);}

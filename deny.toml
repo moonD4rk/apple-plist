@@ -1,0 +1,43 @@
+# Configuration for `cargo deny check`.
+# See https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# Check direct + transitive dependencies on the most common targets.
+targets = [
+  { triple = "x86_64-unknown-linux-gnu" },
+  { triple = "x86_64-apple-darwin" },
+  { triple = "aarch64-apple-darwin" },
+  { triple = "x86_64-pc-windows-msvc" },
+]
+
+[advisories]
+version = 2
+# Fail on any unresolved RustSec advisory.
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "Unicode-3.0", # via unicode-ident ((MIT OR Apache-2.0) AND Unicode-3.0)
+]
+confidence-threshold = 0.8
+# Any crate's license must be discoverable; no exceptions.
+exceptions = []
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Deny crates we explicitly don't want.
+deny = []
+# Skip noisy multi-version warnings for crates that are commonly duplicated.
+skip = []
+skip-tree = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

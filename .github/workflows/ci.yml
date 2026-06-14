@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least-privilege default; the coverage job re-grants what it needs at job level.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same branch to save CI minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+  RUST_BACKTRACE: 1
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # rustfmt.toml uses nightly-only options (group_imports,
+      # imports_granularity); only formatting needs nightly — the crate still
+      # builds and tests on stable. `+nightly` overrides the stable pin in
+      # rust-toolchain.toml.
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - run: cargo +nightly fmt --all --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      # No Windows: the crate does no platform I/O and the fixtures are
+      # byte-exact on every OS (RFC 0007 §7).
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --locked --workspace --all-features
+
+  no-default-features:
+    name: Build (no default features)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --locked --no-default-features
+
+  features:
+    name: Feature powerset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      # No --locked: --no-dev-deps rewrites Cargo.toml, which desyncs the lock
+      # and makes --locked abort. Lock integrity is covered by the other jobs.
+      - run: cargo hack check --feature-powerset --no-dev-deps
+
+  msrv:
+    name: MSRV (1.88)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@1.88
+      - uses: Swatinem/rust-cache@v2
+      # The pin is part of the semver contract (RFC 0007 §3). Bumping MSRV must
+      # be a deliberate commit, never a side effect of adding a dependency.
+      - name: Guard the rust-version pin
+        run: grep -q 'rust-version = "1.88"' Cargo.toml
+      - name: Build on MSRV (locked)
+        run: cargo check --all-features --locked
+
+  publish-dry-run:
+    name: Publish dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Catches packaging mistakes (bad excludes, missing files, metadata) before
+      # a real `cargo publish` to crates.io / docs.rs.
+      - run: cargo publish --dry-run --locked
+
+  deny:
+    name: cargo deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    env:
+      # Catch broken intra-doc links and accidental references into private items.
+      RUSTDOCFLAGS: >-
+        -D rustdoc::broken_intra_doc_links
+        -D rustdoc::private_intra_doc_links
+        -D warnings
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --locked --no-deps --all-features
+
+  taplo:
+    name: TOML format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli
+      - run: taplo fmt --check
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+      - name: Generate lcov coverage
+        run: cargo llvm-cov --locked --workspace --all-features --lcov --output-path lcov.info
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          use_oidc: true
+          files: lcov.info
+          fail_ci_if_error: true
+          flags: unittests
