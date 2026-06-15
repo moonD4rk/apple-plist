@@ -55,7 +55,7 @@ openstep = ["dep:base64"]
 base64 = { version = "0.22", optional = true }
 crc32fast = { version = "1", optional = true }
 indexmap = "2"
-quick-xml = { version = "0.39", optional = true }
+quick-xml = { version = "0.40", optional = true }
 serde = { version = "1", optional = true }
 thiserror = "2"
 time = { version = "0.3", default-features = false, features = ["std"] }
